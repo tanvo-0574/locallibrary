@@ -6,8 +6,11 @@ MAX_LENGTH_ISBN = 13
 MAX_LENGTH_SUMMARY = 1000
 MAX_LENGTH_UNIQUE_ID = 20
 
+
 class LoanStatus(Enum):
     MAINTENANCE = 'm'
     ON_LOAN = 'o'
     AVAILABLE = 'a'
     RESERVED = 'r'
+
+PAGINATION_SIZE = 5
