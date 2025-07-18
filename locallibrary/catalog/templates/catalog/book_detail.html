@@ -36,6 +36,13 @@
     <p class="text-muted">
         <strong>Id:</strong> {{ copy.id }}
     </p>
+
+    {% if copy.status == ON_LOAN and can_mark_returned %}
+        <a href="{% url 'mark-returned' copy.id %}" class="btn btn-primary btn-sm">
+            {%trans "Mark as Returned" %}
+        </a>
+    {% endif %}
+
     {% endfor %}
 </div>
 {% endblock %}

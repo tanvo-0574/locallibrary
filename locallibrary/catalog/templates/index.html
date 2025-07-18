@@ -1,5 +1,6 @@
 {% extends "base_generic.html" %}
 {% load i18n %}
+{% load static %}
 
 {% block content %}
 <h1>{% trans "Local Library Home" %}</h1>
@@ -19,4 +20,5 @@
         You have visited this page {{ num_visits_present }} times.
     {% endblocktrans %}
 </p>
+
 {% endblock %}
