@@ -1,5 +1,8 @@
 from django.shortcuts import render, get_object_or_404
-from django.views import generic
+from django.views import generic, View
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
 from catalog.models import Book, Author, BookInstance, Genre
 from catalog.constants import LoanStatus, PAGINATION_SIZE
 
@@ -78,3 +81,66 @@ class BookDetailView(generic.DetailView):
             'catalog/book_detail.html',
             context=context
         )
+
+class LoanedBooksByUserListView(generic.ListView):
+
+    model = BookInstance
+    template_name = "catalog/bookinstance_list_borrowed_user.html"
+    paginate_by = PAGINATION_SIZE
+
+    def get_queryset(self):
+        """Return the books on loan to the current user."""
+        return (
+            BookInstance.objects.filter(
+                borrower=self.request.user,
+                status__exact=LoanStatus.ON_LOAN.value
+            ).order_by("due_back")
+        )
+
+class MarkBookAsReturnedView(PermissionRequiredMixin, View):
+
+    permission_required = "catalog.can_mark_returned"
+
+    def get(self, request, *args, **kwargs):
+        book_instance = get_object_or_404(BookInstance, pk=kwargs["pk"])
+        return render(
+            request,
+            "catalog/bookinstance_mark_as_returned.html",
+            {
+                "bookinstance": book_instance,
+            },
+        )
+
+    def post(self, request, *args, **kwargs):
+        """Process the form submission (confirm return)."""
+        book_instance = get_object_or_404(BookInstance, pk=kwargs["pk"])
+        book_instance.status = LoanStatus.AVAILABLE.value
+        book_instance.borrower = None
+        book_instance.save()
+
+        # Redirect to the book detail page after returning
+        return redirect("book-detail", pk=book_instance.book.pk)
+
+
+@login_required
+def my_borrowed_books(request):
+    borrowed_books = BookInstance.objects.filter(
+        borrower=request.user,
+        status=LoanStatus.ON_LOAN.value
+    )
+    context = {
+        'borrowed_books': borrowed_books,
+        'LoanStatus': LoanStatus,
+    }
+    return render(request, 'catalog/my_borrowed_books.html', context=context)
+
+@login_required
+@permission_required('catalog.can_mark_returned', raise_exception=True)
+def mark_book_returned(request, bookinstance_id):
+    bookinstance = get_object_or_404(BookInstance, id=bookinstance_id)
+    if request.method == 'POST':
+        bookinstance.status = LoanStatus.AVAILABLE.value
+        bookinstance.borrower = None
+        bookinstance.due_date = None
+        bookinstance.save()
+    return redirect('catalog:my_borrowed_books')
