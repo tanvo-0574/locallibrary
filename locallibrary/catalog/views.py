@@ -158,6 +158,43 @@ class AuthorDelete(DeleteView):
     model = Author
     success_url = reverse_lazy('authors')
 
+class AuthorListView(generic.ListView):
+    """Generic class-based view for a list of authors."""
+
+    model = Author
+    paginate_by = PAGINATION_SIZE
+    context_object_name = "author_list"
+    template_name = "catalog/author_list.html"
+    queryset = Author.objects.all().order_by("last_name", "first_name")
+
+    def get_context_data(self, **kwargs):
+        """Add additional context data to the view."""
+        context = super(AuthorListView, self).get_context_data(**kwargs)
+        context["can_add_author"] = self.request.user.has_perm(
+            "catalog.can_add_author"
+        )
+        return context
+
+class AuthorDetailView(generic.DetailView):
+    """Generic class-based view for an author detail page."""
+
+    model = Author
+
+    def get_context_data(self, **kwargs):
+        """Add additional context data to the view."""
+        context = super(AuthorDetailView, self).get_context_data(**kwargs)
+        context["book_set"] = Book.objects.filter(author=self.object).order_by(
+            "title"
+        )
+        context["can_update_author"] = self.request.user.has_perm(
+            "catalog.change_author"
+        )
+        context["can_delete_author"] = self.request.user.has_perm(
+            "catalog.delete_author"
+        )
+        return context
+
+
 @login_required
 @permission_required('catalog.can_mark_returned', raise_exception=True)
 def mark_book_returned(request, bookinstance_id):

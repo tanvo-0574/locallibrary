@@ -13,4 +13,4 @@ class LoanStatus(Enum):
     AVAILABLE = 'a'
     RESERVED = 'r'
 
-PAGINATION_SIZE = 5
+PAGINATION_SIZE = 10
